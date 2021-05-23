@@ -1,7 +1,7 @@
 {
   "name": "easy-react-dnd",
-  "version": "1.0.7",
-  "description": "Made with create-react-library",
+  "version": "1.1.6",
+  "description": "The easiest drag and drop grid library for React",
   "author": "Pinada",
   "license": "MIT",
   "repository": "https://github.com/Pinada/easy-react-dnd.git",
@@ -11,6 +11,13 @@
   "engines": {
     "node": ">=10"
   },
+  "keywords": [
+    "dnd",
+    "react",
+    "drag and drop",
+    "react drag and drop",
+    "react dnd"
+  ],
   "scripts": {
     "build": "microbundle-crl --no-compress --format modern,cjs",
     "start": "microbundle-crl watch --no-compress --format modern,cjs",

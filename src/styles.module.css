@@ -1,9 +1,17 @@
 /* add css module styles here (optional) */
 
-.test {
-  margin: 2em;
-  padding: 0.5em;
-  border: 2px solid #000;
-  font-size: 2em;
-  text-align: center;
+
+.node-enter {
+  opacity:0;
+  transform: translateY(0px);
+}
+.node-enter-active {
+  opacity:1;
+  transition: opacity 300ms ease;
+}
+.node-exit {
+  opacity: 1;
+}
+.node-exit-active {
+  transition:  transform 300ms;
 }

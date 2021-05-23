@@ -6,18 +6,30 @@ export class EasyDraggable extends Component {
     this.state = {
       overWidth: null,
       overHeight: null,
-      data: []
+      data: [],
+      opacity: 1,
+      clickX: 0,
+      clickY: 0,
+      enter: false,
+      transition: ''
     }
   }
   down = (e, node, position) => {
-    e = e || window.event
-    this.pauseEvent(e)
+    let currentTargetRect = e.currentTarget.getBoundingClientRect()
+    const event_offsetX = e.pageX - window.pageXOffset - currentTargetRect.left,
+      event_offsetY = e.pageY - window.pageYOffset - currentTargetRect.top
+
+    this.setState({ clickX: event_offsetX })
+    this.setState({ clickY: event_offsetY })
+
+    this.setState({ cursor: this.props.cursor })
+    this.setState({ transition: '' })
     if (this.props.onDragStart) this.props.onDragStart(node.name)
-    document.querySelector('body').style.cursor = this.props.cursor
-    this.setState({ isMoving: parseInt(node.id) })
+
+    this.setState({ topBefore: e.currentTarget.getBoundingClientRect().top })
+    this.setState({ leftBefore: e.currentTarget.getBoundingClientRect().left })
+    this.setState({ isStartMoving: parseInt(node.id) })
     this.setState({ initial: position })
-    // this.setState({ offsetWidth: this.ref.clientWidth })
-    // this.setState({ offsetHeight: this.ref.clientHeight })
   }
 
   pauseEvent = (e) => {
@@ -28,61 +40,145 @@ export class EasyDraggable extends Component {
     return false
   }
   generalHover = (e) => {
+    this.pauseEvent(e)
     this.setState({ pageX: e.pageX })
     this.setState({ pageY: e.pageY })
+
+    if (this.state.isStartMoving != null) {
+      this.setState({ isMoving: this.state.isStartMoving })
+    }
   }
   hover = (e, id, i) => {
+    this.pauseEvent(e)
     let itemIndex = i
 
     if (this.state.isMoving != null) {
+      this.setState({ transition: '' })
+
+      if (this.props.transition == 'opacity') {
+        this.setState({ opacity: 0 }, () => {
+          this.setState({ transition: 'opacity 0.4s ' })
+        })
+        setTimeout(() => {
+          this.setState({ opacity: 1 })
+        }, 50)
+      }
+     
+
+     this.setState({ transition: 'all 0.3s ease-in-out' }) 
+
+ 
+    //    let left= e.currentTarget.getBoundingClientRect().left
+
+    //   let top = e.currentTarget.getBoundingClientRect().top
+    //   let topDif = 0
+    //   let leftDif = 0
+
+
+    //   topDif = top - this.state.topBefore
+    //   leftDif = left - this.state.leftBefore
+
+    //   if (topDif>0 || leftDif>0){
+    //     this.setState({ transform: 'translateY(-' + topDif + 'px) translateX(-'+leftDif+'px)' })
+    //   }else{
+    //     topDif =  this.state.topBefore-top
+    //     leftDif =  this.state.leftBefore-left
+    //     this.setState({ transform: 'translateY(' + topDif + 'px) translateX('+leftDif+'px)' })
+    //   }
+   
+    // var tB=e.currentTarget.getBoundingClientRect().top
+    // var lB=e.currentTarget.getBoundingClientRect().left
+
+    // e.currentTarget.addEventListener('transitionend', () => {
+   
+    //     this.setState({ transition: '' }) 
+       
+    //     this.setState({ topBefore: tB })
+    //     this.setState({ leftBefore: lB })
+    //     this.setState({ test: 10000000 })
+      
+    
+    //   });
+
       const temp = [...this.state.data]
       let startingPos = this.state.initial
+
+      this.setState({ test: itemIndex })
       let startingElem = temp[startingPos]
+      this.setState({ itemIndex: itemIndex })
 
       temp.splice(startingPos, 1)
       temp.splice(itemIndex, 0, startingElem)
       this.setState({ initial: itemIndex })
       this.setState({ endKey: itemIndex })
-      this.setState({ data: temp })
       if (this.props.onItemSwitch) this.props.onItemSwitch(temp)
+      this.setState({ data: temp })
+     
+    } else {
+      if (this.props.onItemHover) {
+        this.props.onItemHover(id.key, i)
+      }
     }
   }
 
   componentDidMount() {
     this.setState({ itemPerRow: this.props.itemsPerRow })
     this.init()
+    window.addEventListener('resize', (e) => {
+      if (this.ref) {
+        const height = this.ref.clientHeight
+        const width = this.ref.clientWidth
+        this.setState({ overWidth: width })
+        this.setState({ overHeight: height })
+      }
+    })
   }
 
   componentDidUpdate(prevP, prevState) {
+    if (
+      prevP.children != this.props.children &&
+      this.state.isStartMoving == null
+    ) {
+      this.init()
+
+      if (this.ref) {
+        const height = this.ref.clientHeight
+        const width = this.ref.clientWidth
+        this.setState({ overWidth: width })
+        this.setState({ overHeight: height })
+      }
+    }
+
     if (this.state.data != prevState.data) {
       if (document.getElementsByClassName('modern-item')[0]) {
-
-        if (this.props.handle){
+        if (this.props.handle) {
           const height =
-          document.getElementsByClassName('modern-handle')[0].clientHeight
+            document.getElementsByClassName('modern-handle')[0].clientHeight
 
-        const width =
-          document.getElementsByClassName('modern-handle')[0].clientWidth
-        
+          const width =
+            document.getElementsByClassName('modern-handle')[0].clientWidth
+
           this.setState({ offsetWidth: width })
           this.setState({ offsetHeight: height })
-        }else{
-
+        } else {
           const height =
-          document.getElementsByClassName('modern-item')[0].clientHeight
+            document.getElementsByClassName('modern-item')[0].clientHeight
 
-        const width =
-          document.getElementsByClassName('modern-item')[0].clientWidth
+          const width =
+            document.getElementsByClassName('modern-item')[0].clientWidth
           this.setState({ offsetWidth: width })
           this.setState({ offsetHeight: height })
         }
-        const height =
-        this.ref.clientHeight
 
-        const width =this.ref.clientWidth
-          this.setState({ overWidth: width })
-          this.setState({ overHeight: height })
-      
+        let height = this.state.height
+        let width = this.state.width
+        if (this.ref) {
+          height = this.ref.clientHeight
+          width = this.ref.clientWidth
+        }
+
+        this.setState({ overWidth: width })
+        this.setState({ overHeight: height })
       }
     }
 
@@ -98,17 +194,17 @@ export class EasyDraggable extends Component {
     }
   }
   up = (e) => {
+    this.pauseEvent(e)
+  
     if (this.props.onDragStop) this.props.onDragStop(this.state.endKey)
     this.setState({ isMoving: null })
-    document.querySelector('body').style.cursor = 'auto'
+    this.setState({ isStartMoving: null })
+  
   }
 
   init = () => {
     let items = [...this.props.children]
-    let inside = []
-    var next
-    let temp = []
-    var asHandle = false
+    this.setState({ cursor: this.props.cursor })
     items.length > 0
       ? (items = items.map((item) => Object.assign({}, item)))
       : Object.assign({}, items)
@@ -151,11 +247,12 @@ export class EasyDraggable extends Component {
             id={items.length + j + '-' + 3}
             onMouseUp={(e) => this.up(e)}
             style={{
-              left: this.state.pageX - this.state.offsetWidth / 2,
-              top: this.state.pageY - this.state.offsetHeight / 2,
+              left: this.state.pageX - this.state.clickX,
+              top: this.state.pageY - this.state.clickY,
               position: 'relative',
               zIndex: 100,
               height: '100%',
+              cursor: this.props.handle ? 'auto' : this.state.cursor,
               marginTop: this.props.vSpacing,
               marginBottom: this.props.vSpacing,
               marginLeft: this.props.hSpacing,
@@ -175,6 +272,10 @@ export class EasyDraggable extends Component {
               onMouseDown={(e) =>
                 !this.props.handle ? this.down(e, item, i) : ''
               }
+              style={{
+                overflow: 'hidden',
+                minWidth: 0
+              }}
               onMouseEnter={(e) => this.hover(e, item, i)}
               onMouseUp={(e) => this.up(e, item.id)}
               ref={(ref) => {
@@ -197,8 +298,8 @@ export class EasyDraggable extends Component {
                       marginBottom: this.props.vSpacing,
                       position: 'relative',
                       zIndex: 110,
-                      width: this.state.overWidth,
-                      height: this.state.overHeight,
+                      height: 'auto',
+                      width: 'auto',
                       marginLeft: this.props.hSpacing,
                       marginRight: this.props.hSpacing
                     }
@@ -206,26 +307,82 @@ export class EasyDraggable extends Component {
             >
               <div
                 id={item.id + '-' + i}
+                ref={(ref) => {
+                  if (i == this.state.test) {
+                    this.moving = ref
+                  }
+
+                  if (i == this.state.initial) {
+                    this.before = ref
+                  }
+
+                 
+                }}
                 style={
                   this.state.isMoving == item.id
                     ? {
+                        cursor: this.props.handle ? 'auto' : this.state.cursor,
+
                         width: this.state.overWidth,
                         height: this.state.overHeight,
                         position: 'absolute',
-                        zIndex: 101,
-                        left: this.state.pageX - this.state.offsetWidth / 2,
-                        top: this.state.pageY - this.state.offsetHeight / 2
+                        left: this.state.pageX - this.state.clickX,
+                        top: this.state.pageY - this.state.clickY
                       }
                     : {
-                        width: this.state.overWidth,
-                        height: this.state.overHeight
+                        transition: this.state.transition,
+                        opacity:
+                          i == this.state.test &&
+                          this.props.transition == 'opacity'
+                            ? this.state.opacity
+                            : 1,
+                        cursor: this.props.handle ? 'auto' : this.state.cursor,
+                        transform:
+                          i == this.state.test ? this.state.transform : '',
+                        height: 'auto',
+                        width: 'auto'
                       }
                 }
               >
                 {this.props.handle && (
-                  <div style={{display:"inline-block"}} className="modern-handle" onMouseDown={(e) => this.down(e, item, i)}>{this.props.handle}</div>
+                  <div
+                    style={{
+                      cursor: this.props.handle ? 'auto' : this.state.cursor,
+                      display: 'inline-block'
+                    }}
+                    className='modern-handle'
+                    onMouseDown={(e) => this.down(e, item, i)}
+                  >
+                    {this.props.handle}
+                  </div>
                 )}
-                {item.props ? item.props.children : item}
+                <div
+                  style={
+                    (!this.props.handle
+                      ? {
+                          width: this.state.overWidth,
+                          height: this.state.overHeight,
+                          position: 'relative',
+                          zIndex: 120
+                        }
+                      : { position: 'relative', zIndex: 120 },
+                    this.state.isMoving == item.id
+                      ? {
+                          cursor: this.props.handle
+                            ? 'auto'
+                            : this.state.cursor,
+
+                          width: this.state.overWidth,
+                          height: this.state.overHeight
+                        }
+                      : {
+                          height: 'auto',
+                          width: 'auto'
+                        })
+                  }
+                >
+                  {item.props ? item.props.children : item}
+                </div>
               </div>
             </div>
           )
@@ -238,6 +395,8 @@ export class EasyDraggable extends Component {
                   style={{
                     overflow: 'hidden',
                     display: 'grid',
+                    minHeight: 0,
+                    minWidth: 0,
                     gridTemplateColumns: gridClass,
                     position: 'static'
                   }}
@@ -255,6 +414,8 @@ export class EasyDraggable extends Component {
                     style={{
                       overflow: 'hidden',
                       display: 'grid',
+                      minHeight: 0,
+                      minWidth: 0,
                       gridTemplateColumns: gridClass,
                       position: 'static'
                     }}
@@ -272,6 +433,9 @@ export class EasyDraggable extends Component {
 
     return (
       <div
+        ref={(ref) => {
+          this.cursor = ref
+        }}
         style={{ maxWidth: '100vw', overflow: 'hidden' }}
         onMouseMove={(e) => this.generalHover(e)}
       >
